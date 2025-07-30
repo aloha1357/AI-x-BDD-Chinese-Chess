@@ -2,3 +2,4 @@
 vcpkg/
 cucumber-cpp/
 # Ignore build directories
+build/
