@@ -265,10 +265,24 @@ end
 
 def has_cannon_capture_scenario?
   return false unless $board && $board[:pieces]
-  # 檢查炮捕獲場景：屏障在 (6,5)，目標在 (6,8)
-  screen = $board[:pieces].any? { |p| p[:position][:row] == 6 && p[:position][:col] == 5 }
+  # 檢查炮捕獲場景：恰好有一個屏障在路徑上，目標在 (6,8)
   target = $board[:pieces].any? { |p| p[:position][:row] == 6 && p[:position][:col] == 8 }
-  screen && target
+  
+  # 計算路徑上的屏障數量 (不包括炮本身和目標)
+  cannon = $board[:pieces].find { |p| p[:type] == 'cannon' && p[:position][:row] == 6 && p[:position][:col] == 2 }
+  target_piece = $board[:pieces].find { |p| p[:position][:row] == 6 && p[:position][:col] == 8 }
+  
+  return false unless cannon && target_piece
+  
+  screens_on_path = $board[:pieces].count do |piece|
+    piece[:position][:row] == 6 && 
+    piece[:position][:col] > 2 && 
+    piece[:position][:col] < 8 &&
+    piece != cannon &&
+    piece != target_piece
+  end
+  
+  target && screens_on_path == 1  # 恰好一個屏障
 end
 
 def has_cannon_no_screen_scenario?
@@ -281,12 +295,23 @@ end
 
 def has_pieces_count_4?
   return false unless $board && $board[:pieces]
-  # 檢查是否有 4 個棋子且炮在 (6,2) 目標在 (6,8)（炮多屏障場景）
-  pieces_count = $board[:pieces].length
-  has_cannon_at_start = $board[:pieces].any? { |p| p[:type] == 'cannon' && p[:position][:row] == 6 && p[:position][:col] == 2 }
-  has_target_at_end = $board[:pieces].any? { |p| p[:position][:row] == 6 && p[:position][:col] == 8 }
   
-  pieces_count == 4 && has_cannon_at_start && has_target_at_end
+  # 檢查炮多屏障場景：路徑上有超過一個屏障
+  cannon = $board[:pieces].find { |p| p[:type] == 'cannon' && p[:position][:row] == 6 && p[:position][:col] == 2 }
+  target = $board[:pieces].find { |p| p[:position][:row] == 6 && p[:position][:col] == 8 }
+  
+  return false unless cannon && target
+  
+  # 計算路徑上的屏障數量 (不包括炮本身和目標)
+  screens_on_path = $board[:pieces].count do |piece|
+    piece[:position][:row] == 6 && 
+    piece[:position][:col] > 2 && 
+    piece[:position][:col] < 8 &&
+    piece != cannon &&
+    piece != target
+  end
+  
+  screens_on_path > 1  # 超過一個屏障就是違法的
 end
 
 def has_elephant_midpoint_block?
