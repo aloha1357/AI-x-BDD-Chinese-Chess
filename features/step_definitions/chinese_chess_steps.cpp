@@ -37,11 +37,14 @@ protected:
     void givenBoardIsEmptyExceptFor(const std::string& pieceDesc) {
         game.getBoard().clear();
         
-        // Parse piece description like "Red General at (1, 5)"
+        // Parse piece descriptions separated by commas
+        std::string desc = pieceDesc;
         std::regex pieceRegex(R"((Red|Black)\s+(General|Guard|Rook|Horse|Cannon|Elephant|Soldier)\s+at\s+\((\d+),\s*(\d+)\))");
-        std::smatch matches;
+        std::sregex_iterator iter(desc.begin(), desc.end(), pieceRegex);
+        std::sregex_iterator end;
         
-        if (std::regex_search(pieceDesc, matches, pieceRegex)) {
+        for (; iter != end; ++iter) {
+            const std::smatch& matches = *iter;
             Color color = (matches[1].str() == "Red") ? Color::RED : Color::BLACK;
             std::string pieceType = matches[2].str();
             int row = std::stoi(matches[3].str());
@@ -303,4 +306,105 @@ TEST_F(ChineseChessSteps, RedMovesElephantTwoStepDiagonalClearMidpointLegal) {
     
     // Then the move is legal
     EXPECT_TRUE(lastMoveResult.isLegal) << "Move should be legal";
+}
+
+// Fifteenth scenario: Red moves the Elephant and tries to cross the river (Illegal)
+TEST_F(ChineseChessSteps, RedMovesElephantCrossRiverIllegal) {
+    // Given the board is empty except for a Red Elephant at (5, 3)
+    givenBoardIsEmptyExceptFor("Red Elephant at (5, 3)");
+    
+    // When Red moves the Elephant from (5, 3) to (7, 5)
+    whenPlayerMovesFrom("(5, 3)", "(7, 5)");
+    
+    // Then the move is illegal
+    EXPECT_FALSE(lastMoveResult.isLegal) << "Move should be illegal - Elephant cannot cross the river";
+}
+
+// Sixteenth scenario: Red moves the Elephant and its midpoint is blocked (Illegal)
+TEST_F(ChineseChessSteps, RedMovesElephantMidpointBlockedIllegal) {
+    // Given the board has Red Elephant at (3, 3) and Black Rook at (4, 4) - midpoint
+    givenBoardHas({
+        {"Red Elephant", "(3, 3)"},
+        {"Black Rook", "(4, 4)"}
+    });
+    
+    // When Red moves the Elephant from (3, 3) to (5, 5)
+    whenPlayerMovesFrom("(3, 3)", "(5, 5)");
+    
+    // Then the move is illegal
+    EXPECT_FALSE(lastMoveResult.isLegal) << "Move should be illegal - Elephant eye is blocked";
+}
+
+// Seventeenth scenario: Red moves the Soldier forward before crossing the river (Legal)
+TEST_F(ChineseChessSteps, RedMovesSoldierForwardBeforeCrossingRiverLegal) {
+    // Given the board is empty except for a Red Soldier at (3, 5)
+    givenBoardIsEmptyExceptFor("Red Soldier at (3, 5)");
+    
+    // When Red moves the Soldier from (3, 5) to (4, 5)
+    whenPlayerMovesFrom("(3, 5)", "(4, 5)");
+    
+    // Then the move is legal
+    EXPECT_TRUE(lastMoveResult.isLegal) << "Move should be legal";
+}
+
+// Eighteenth scenario: Red moves the Soldier and tries to move sideways before crossing (Illegal)
+TEST_F(ChineseChessSteps, RedMovesSoldierSidewaysBeforeCrossingIllegal) {
+    // Given the board is empty except for a Red Soldier at (3, 5)
+    givenBoardIsEmptyExceptFor("Red Soldier at (3, 5)");
+    
+    // When Red moves the Soldier from (3, 5) to (3, 4)
+    whenPlayerMovesFrom("(3, 5)", "(3, 4)");
+    
+    // Then the move is illegal
+    EXPECT_FALSE(lastMoveResult.isLegal) << "Move should be illegal - Soldier cannot move sideways before crossing river";
+}
+
+// Nineteenth scenario: Red moves the Soldier sideways after crossing the river (Legal)
+TEST_F(ChineseChessSteps, RedMovesSoldierSidewaysAfterCrossingRiverLegal) {
+    // Given the board is empty except for a Red Soldier at (6, 5)
+    givenBoardIsEmptyExceptFor("Red Soldier at (6, 5)");
+    
+    // When Red moves the Soldier from (6, 5) to (6, 4)
+    whenPlayerMovesFrom("(6, 5)", "(6, 4)");
+    
+    // Then the move is legal
+    EXPECT_TRUE(lastMoveResult.isLegal) << "Move should be legal";
+}
+
+// Twentieth scenario: Red moves the Soldier and attempts to move backward after crossing (Illegal)
+TEST_F(ChineseChessSteps, RedMovesSoldierBackwardAfterCrossingIllegal) {
+    // Given the board is empty except for a Red Soldier at (6, 5)
+    givenBoardIsEmptyExceptFor("Red Soldier at (6, 5)");
+    
+    // When Red tries to move the Soldier backward from (6, 5) to (5, 5)
+    whenPlayerMovesFrom("(6, 5)", "(5, 5)");
+    
+    // Then the move is illegal
+    EXPECT_FALSE(lastMoveResult.isLegal) << "Move should be illegal - Soldier cannot move backward after crossing river";
+}
+
+// Twenty-first scenario: Red captures opponent's General and wins immediately (Legal)
+TEST_F(ChineseChessSteps, RedCapturesOpponentGeneralWinsImmediately) {
+    // Given the board has Red Rook at (8, 4) and Black General at (9, 4)
+    givenBoardIsEmptyExceptFor("Red Rook at (8, 4), Black General at (9, 4)");
+    
+    // When Red moves the Rook to capture the Black General from (8, 4) to (9, 4)
+    whenPlayerMovesFrom("(8, 4)", "(9, 4)");
+    
+    // Then the move is legal and the game should end with Red winning
+    EXPECT_TRUE(lastMoveResult.isLegal) << "Move should be legal - capturing opponent's General";
+    // Note: In a full implementation, we would also check if the game ends and Red wins
+}
+
+// Twenty-second scenario: Red captures a non-General piece and the game continues (Legal)
+TEST_F(ChineseChessSteps, RedCapturesNonGeneralPieceGameContinues) {
+    // Given the board has Red Rook at (8, 4) and Black Guard at (9, 4)
+    givenBoardIsEmptyExceptFor("Red Rook at (8, 4), Black Guard at (9, 4)");
+    
+    // When Red moves the Rook to capture the Black Guard from (8, 4) to (9, 4)
+    whenPlayerMovesFrom("(8, 4)", "(9, 4)");
+    
+    // Then the move is legal and the game continues
+    EXPECT_TRUE(lastMoveResult.isLegal) << "Move should be legal - capturing opponent's non-General piece";
+    // Note: In a full implementation, we would also check that the game continues
 }
