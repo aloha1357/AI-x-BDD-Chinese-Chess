@@ -1,4 +1,5 @@
 #include "Game.h"
+#include <algorithm>
 
 Game::Game() : currentPlayer_(Color::RED) {
     reset();
@@ -37,6 +38,11 @@ MoveResult Game::makeMove(const Position& from, const Position& to) {
         return MoveResult(false);
     }
     
+    // Special rule for General: check if move would cause generals to face each other
+    if (piece->getType() == PieceType::GENERAL && wouldGeneralsFaceEachOther(from, to)) {
+        return MoveResult(false);
+    }
+    
     // Move is legal - for now just return true without actually moving
     // (We'll implement the actual move execution later)
     return MoveResult(true);
@@ -45,4 +51,64 @@ MoveResult Game::makeMove(const Position& from, const Position& to) {
 bool Game::isGameOver() const {
     // Placeholder implementation - will be filled during BDD cycle
     return false;
+}
+
+bool Game::wouldGeneralsFaceEachOther(const Position& from, const Position& to) const {
+    // Find positions of both generals after the move
+    Position redGeneralPos(0, 0);
+    Position blackGeneralPos(0, 0);
+    bool foundRed = false, foundBlack = false;
+    
+    // Search for generals on the board
+    for (int row = 1; row <= 10; ++row) {
+        for (int col = 1; col <= 9; ++col) {
+            Position currentPos(row, col);
+            Piece* piece = board_.getPiece(currentPos);
+            
+            if (piece && piece->getType() == PieceType::GENERAL) {
+                // If this is the piece being moved, use the destination position
+                Position finalPos = (currentPos == from) ? to : currentPos;
+                
+                if (piece->getColor() == Color::RED) {
+                    redGeneralPos = finalPos;
+                    foundRed = true;
+                } else {
+                    blackGeneralPos = finalPos;
+                    foundBlack = true;
+                }
+            }
+        }
+    }
+    
+    // If both generals found and they're in the same column
+    if (foundRed && foundBlack && redGeneralPos.col == blackGeneralPos.col) {
+        // Check if there are no pieces between them
+        return areGeneralsDirectlyFacing(redGeneralPos, blackGeneralPos, from, to);
+    }
+    
+    return false;
+}
+
+bool Game::areGeneralsDirectlyFacing(const Position& redPos, const Position& blackPos, 
+                                    const Position& moveFrom, const Position& moveTo) const {
+    int minRow = std::min(redPos.row, blackPos.row);
+    int maxRow = std::max(redPos.row, blackPos.row);
+    
+    // Check each position between the generals
+    for (int row = minRow + 1; row < maxRow; ++row) {
+        Position checkPos(row, redPos.col);
+        
+        // Skip the position we're moving from (it will be empty after the move)
+        if (checkPos == moveFrom) {
+            continue;
+        }
+        
+        // If there's a piece at this position (and it's not being moved), 
+        // then generals don't face each other
+        if (board_.getPiece(checkPos) != nullptr) {
+            return false;
+        }
+    }
+    
+    return true; // No pieces between generals
 }

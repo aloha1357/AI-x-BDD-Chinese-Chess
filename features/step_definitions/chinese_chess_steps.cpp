@@ -2,6 +2,8 @@
 #include <regex>
 #include <string>
 #include <memory>
+#include <vector>
+#include <utility>
 #include "game/Game.h"
 #include "game/General.h"
 
@@ -52,6 +54,31 @@ protected:
         }
     }
     
+    void givenBoardHas(const std::vector<std::pair<std::string, std::string>>& pieces) {
+        game.getBoard().clear();
+        
+        for (const auto& [pieceDesc, posStr] : pieces) {
+            std::regex pieceRegex(R"((Red|Black)\s+(General|Guard|Rook|Horse|Cannon|Elephant|Soldier))");
+            std::smatch matches;
+            
+            if (std::regex_search(pieceDesc, matches, pieceRegex)) {
+                Color color = (matches[1].str() == "Red") ? Color::RED : Color::BLACK;
+                std::string pieceType = matches[2].str();
+                Position pos = parsePosition(posStr);
+                
+                std::unique_ptr<Piece> piece;
+                if (pieceType == "General") {
+                    piece = std::make_unique<General>(color);
+                }
+                // Other pieces will be added as we implement them
+                
+                if (piece) {
+                    game.getBoard().setPiece(pos, std::move(piece));
+                }
+            }
+        }
+    }
+    
     void whenPlayerMovesFrom(const std::string& fromStr, const std::string& toStr) {
         Position from = parsePosition(fromStr);
         Position to = parsePosition(toStr);
@@ -81,4 +108,19 @@ TEST_F(ChineseChessSteps, RedMovesGeneralOutsidePalaceIllegal) {
     
     // Then the move is illegal
     EXPECT_FALSE(lastMoveResult.isLegal) << "Move should be illegal - General cannot move outside palace";
+}
+
+// Third scenario: Generals face each other on the same file (Illegal)
+TEST_F(ChineseChessSteps, GeneralsFaceEachOtherIllegal) {
+    // Given the board has Red General at (2, 4) and Black General at (8, 5)
+    givenBoardHas({
+        {"Red General", "(2, 4)"},
+        {"Black General", "(8, 5)"}
+    });
+    
+    // When Red moves the General from (2, 4) to (2, 5)
+    whenPlayerMovesFrom("(2, 4)", "(2, 5)");
+    
+    // Then the move is illegal
+    EXPECT_FALSE(lastMoveResult.isLegal) << "Move should be illegal - Generals cannot face each other";
 }

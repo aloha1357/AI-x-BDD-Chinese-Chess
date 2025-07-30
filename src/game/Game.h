@@ -15,6 +15,10 @@ private:
     Board board_;
     Color currentPlayer_;
     
+    bool wouldGeneralsFaceEachOther(const Position& from, const Position& to) const;
+    bool areGeneralsDirectlyFacing(const Position& redPos, const Position& blackPos,
+                                  const Position& moveFrom, const Position& moveTo) const;
+    
 public:
     Game();
     
