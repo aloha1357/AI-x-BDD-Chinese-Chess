@@ -1,2 +1,4 @@
 # Ignore vcpkg directory
 vcpkg/
+cucumber-cpp/
+# Ignore build directories
