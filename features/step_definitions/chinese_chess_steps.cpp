@@ -7,6 +7,11 @@
 #include "game/Game.h"
 #include "game/General.h"
 #include "game/Guard.h"
+#include "game/Rook.h"
+#include "game/Soldier.h"
+#include "game/Horse.h"
+#include "game/Cannon.h"
+#include "game/Elephant.h"
 
 class ChineseChessSteps : public ::testing::Test {
 protected:
@@ -48,6 +53,16 @@ protected:
                 piece = std::make_unique<General>(color);
             } else if (pieceType == "Guard") {
                 piece = std::make_unique<Guard>(color);
+            } else if (pieceType == "Rook") {
+                piece = std::make_unique<Rook>(color);
+            } else if (pieceType == "Soldier") {
+                piece = std::make_unique<Soldier>(color);
+            } else if (pieceType == "Horse") {
+                piece = std::make_unique<Horse>(color);
+            } else if (pieceType == "Cannon") {
+                piece = std::make_unique<Cannon>(color);
+            } else if (pieceType == "Elephant") {
+                piece = std::make_unique<Elephant>(color);
             }
             // Other pieces will be added as we implement them
             
@@ -74,6 +89,16 @@ protected:
                     piece = std::make_unique<General>(color);
                 } else if (pieceType == "Guard") {
                     piece = std::make_unique<Guard>(color);
+                } else if (pieceType == "Rook") {
+                    piece = std::make_unique<Rook>(color);
+                } else if (pieceType == "Soldier") {
+                    piece = std::make_unique<Soldier>(color);
+                } else if (pieceType == "Horse") {
+                    piece = std::make_unique<Horse>(color);
+                } else if (pieceType == "Cannon") {
+                    piece = std::make_unique<Cannon>(color);
+                } else if (pieceType == "Elephant") {
+                    piece = std::make_unique<Elephant>(color);
                 }
                 // Other pieces will be added as we implement them
                 
@@ -152,4 +177,130 @@ TEST_F(ChineseChessSteps, RedMovesGuardStraightIllegal) {
     
     // Then the move is illegal
     EXPECT_FALSE(lastMoveResult.isLegal) << "Move should be illegal - Guard cannot move straight";
+}
+
+// Sixth scenario: Red moves the Rook along a clear rank (Legal)
+TEST_F(ChineseChessSteps, RedMovesRookAlongClearRankLegal) {
+    // Given the board is empty except for a Red Rook at (4, 1)
+    givenBoardIsEmptyExceptFor("Red Rook at (4, 1)");
+    
+    // When Red moves the Rook from (4, 1) to (4, 9)
+    whenPlayerMovesFrom("(4, 1)", "(4, 9)");
+    
+    // Then the move is legal
+    EXPECT_TRUE(lastMoveResult.isLegal) << "Move should be legal";
+}
+
+// Seventh scenario: Red moves the Rook and attempts to jump over a piece (Illegal)
+TEST_F(ChineseChessSteps, RedMovesRookJumpOverPieceIllegal) {
+    // Given the board has Red Rook at (4, 1) and Black Soldier at (4, 5)
+    givenBoardHas({
+        {"Red Rook", "(4, 1)"},
+        {"Black Soldier", "(4, 5)"}
+    });
+    
+    // When Red moves the Rook from (4, 1) to (4, 9)
+    whenPlayerMovesFrom("(4, 1)", "(4, 9)");
+    
+    // Then the move is illegal
+    EXPECT_FALSE(lastMoveResult.isLegal) << "Move should be illegal - Rook cannot jump over pieces";
+}
+
+// Eighth scenario: Red moves the Horse in an "L" shape with no block (Legal)
+TEST_F(ChineseChessSteps, RedMovesHorseLShapeNoBlockLegal) {
+    // Given the board is empty except for a Red Horse at (3, 3)
+    givenBoardIsEmptyExceptFor("Red Horse at (3, 3)");
+    
+    // When Red moves the Horse from (3, 3) to (5, 4)
+    whenPlayerMovesFrom("(3, 3)", "(5, 4)");
+    
+    // Then the move is legal
+    EXPECT_TRUE(lastMoveResult.isLegal) << "Move should be legal";
+}
+
+// Ninth scenario: Red moves the Horse and it is blocked by an adjacent piece (Illegal)
+TEST_F(ChineseChessSteps, RedMovesHorseBlockedByAdjacentPieceIllegal) {
+    // Given the board has Red Horse at (3, 3) and Black Rook at (4, 3) - "leg-block"
+    givenBoardHas({
+        {"Red Horse", "(3, 3)"},
+        {"Black Rook", "(4, 3)"}
+    });
+    
+    // When Red moves the Horse from (3, 3) to (5, 4)
+    whenPlayerMovesFrom("(3, 3)", "(5, 4)");
+    
+    // Then the move is illegal
+    EXPECT_FALSE(lastMoveResult.isLegal) << "Move should be illegal - Horse is blocked by adjacent piece";
+}
+
+// Tenth scenario: Red moves the Cannon like a Rook with an empty path (Legal)
+TEST_F(ChineseChessSteps, RedMovesCannonLikeRookEmptyPathLegal) {
+    // Given the board is empty except for a Red Cannon at (6, 2)
+    givenBoardIsEmptyExceptFor("Red Cannon at (6, 2)");
+    
+    // When Red moves the Cannon from (6, 2) to (6, 8)
+    whenPlayerMovesFrom("(6, 2)", "(6, 8)");
+    
+    // Then the move is legal
+    EXPECT_TRUE(lastMoveResult.isLegal) << "Move should be legal";
+}
+
+// Eleventh scenario: Red moves the Cannon and jumps exactly one screen to capture (Legal)
+TEST_F(ChineseChessSteps, RedMovesCannonJumpOneScreenCaptureLegal) {
+    // Given the board has Red Cannon at (6, 2), Black Soldier at (6, 5) as screen, and Black Guard at (6, 8) as target
+    givenBoardHas({
+        {"Red Cannon", "(6, 2)"},
+        {"Black Soldier", "(6, 5)"},
+        {"Black Guard", "(6, 8)"}
+    });
+    
+    // When Red moves the Cannon from (6, 2) to (6, 8)
+    whenPlayerMovesFrom("(6, 2)", "(6, 8)");
+    
+    // Then the move is legal
+    EXPECT_TRUE(lastMoveResult.isLegal) << "Move should be legal";
+}
+
+// Twelfth scenario: Red moves the Cannon and tries to jump with zero screens (Illegal)
+TEST_F(ChineseChessSteps, RedMovesCannonJumpZeroScreensIllegal) {
+    // Given the board has Red Cannon at (6, 2) and Black Guard at (6, 8)
+    givenBoardHas({
+        {"Red Cannon", "(6, 2)"},
+        {"Black Guard", "(6, 8)"}
+    });
+    
+    // When Red moves the Cannon from (6, 2) to (6, 8)
+    whenPlayerMovesFrom("(6, 2)", "(6, 8)");
+    
+    // Then the move is illegal
+    EXPECT_FALSE(lastMoveResult.isLegal) << "Move should be illegal - Cannon cannot capture without screen";
+}
+
+// Thirteenth scenario: Red moves the Cannon and tries to jump with more than one screen (Illegal)
+TEST_F(ChineseChessSteps, RedMovesCannonJumpMoreThanOneScreenIllegal) {
+    // Given the board has Red Cannon at (6, 2), Red Soldier at (6, 4), Black Soldier at (6, 5), and Black Guard at (6, 8)
+    givenBoardHas({
+        {"Red Cannon", "(6, 2)"},
+        {"Red Soldier", "(6, 4)"},
+        {"Black Soldier", "(6, 5)"},
+        {"Black Guard", "(6, 8)"}
+    });
+    
+    // When Red moves the Cannon from (6, 2) to (6, 8)
+    whenPlayerMovesFrom("(6, 2)", "(6, 8)");
+    
+    // Then the move is illegal
+    EXPECT_FALSE(lastMoveResult.isLegal) << "Move should be illegal - Cannon cannot jump with more than one screen";
+}
+
+// Fourteenth scenario: Red moves the Elephant 2-step diagonal with a clear midpoint (Legal)
+TEST_F(ChineseChessSteps, RedMovesElephantTwoStepDiagonalClearMidpointLegal) {
+    // Given the board is empty except for a Red Elephant at (3, 3)
+    givenBoardIsEmptyExceptFor("Red Elephant at (3, 3)");
+    
+    // When Red moves the Elephant from (3, 3) to (5, 5)
+    whenPlayerMovesFrom("(3, 3)", "(5, 5)");
+    
+    // Then the move is legal
+    EXPECT_TRUE(lastMoveResult.isLegal) << "Move should be legal";
 }

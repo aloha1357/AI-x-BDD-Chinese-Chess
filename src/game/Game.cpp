@@ -1,4 +1,7 @@
 #include "Game.h"
+#include "Horse.h"
+#include "Cannon.h"
+#include "Elephant.h"
 #include <algorithm>
 
 Game::Game() : currentPlayer_(Color::RED) {
@@ -36,6 +39,35 @@ MoveResult Game::makeMove(const Position& from, const Position& to) {
     Piece* targetPiece = board_.getPiece(to);
     if (targetPiece && targetPiece->getColor() == currentPlayer_) {
         return MoveResult(false);
+    }
+    
+    // Check path clearance for pieces that can't jump (Rook, Cannon)
+    if (piece->getType() == PieceType::ROOK && !board_.isPathClear(from, to)) {
+        return MoveResult(false);
+    }
+    
+    // Check cannon jumping rules
+    if (piece->getType() == PieceType::CANNON) {
+        Cannon* cannon = static_cast<Cannon*>(piece);
+        if (!cannon->isValidMoveWithBoard(from, to, board_)) {
+            return MoveResult(false);
+        }
+    }
+    
+    // Check leg blocking for Horse
+    if (piece->getType() == PieceType::HORSE) {
+        Horse* horse = static_cast<Horse*>(piece);
+        if (!horse->isValidMoveWithBoard(from, to, board_)) {
+            return MoveResult(false);
+        }
+    }
+    
+    // Check elephant eye blocking for Elephant
+    if (piece->getType() == PieceType::ELEPHANT) {
+        Elephant* elephant = static_cast<Elephant*>(piece);
+        if (!elephant->isValidMoveWithBoard(from, to, board_)) {
+            return MoveResult(false);
+        }
     }
     
     // Special rule for General: check if move would cause generals to face each other
