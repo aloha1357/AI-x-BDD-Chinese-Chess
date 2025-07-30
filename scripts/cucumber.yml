@@ -1,0 +1,18 @@
+﻿# Cucumber Configuration
+default: --format pretty --format json:cucumber_results.json --format html:cucumber_report.html
+
+# Profile for CI/CD
+ci: --format json:cucumber_results.json --format junit:cucumber_junit.xml --strict
+
+# Profile for development
+dev: --format pretty --format html:cucumber_report.html --format json:cucumber_results.json
+
+# Profile for debugging
+debug: --format pretty --verbose --dry-run
+
+# Tags configuration
+smoke: --tags "@smoke"
+regression: --tags "not @wip"
+legal_moves: --tags "@Legal"
+illegal_moves: --tags "@Illegal"
+piece_specific: --tags "@General or @Guard or @Rook or @Horse or @Cannon or @Elephant or @Soldier"

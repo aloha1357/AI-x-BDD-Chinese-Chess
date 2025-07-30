@@ -1,0 +1,63 @@
+﻿cmake_minimum_required(VERSION 3.15)
+project(ChineseChessCucumber)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Find vcpkg packages
+find_package(PkgConfig REQUIRED)
+find_package(GTest REQUIRED)
+find_package(cucumber-cpp REQUIRED)
+find_package(nlohmann_json REQUIRED)
+
+# Include directories
+include_directories({CMAKE_SOURCE_DIR}/src)
+include_directories({CMAKE_SOURCE_DIR}/cucumber_features)
+
+# Source files
+file(GLOB_RECURSE GAME_SOURCES "src/**/*.cpp")
+file(GLOB_RECURSE CUCUMBER_SOURCES "cucumber_features/*.cpp")
+
+# Create Cucumber test executable
+add_executable(cucumber_tests
+    {GAME_SOURCES}
+    {CUCUMBER_SOURCES}
+)
+
+# Link libraries
+target_link_libraries(cucumber_tests
+    GTest::gtest 
+    GTest::gtest_main
+    cucumber-cpp::cucumber-cpp
+    nlohmann_json::nlohmann_json
+)
+
+# Set working directory for tests
+set_target_properties(cucumber_tests PROPERTIES 
+    WORKING_DIRECTORY {CMAKE_SOURCE_DIR}
+)
+
+# Custom target to run Cucumber tests with JSON output
+add_custom_target(run_cucumber
+    COMMAND {CMAKE_BINARY_DIR}/cucumber_tests 
+        --format=json 
+        --out=cucumber_results.json
+        --format=html 
+        --out=cucumber_report.html
+        --format=junit
+        --out=cucumber_junit.xml
+    DEPENDS cucumber_tests
+    WORKING_DIRECTORY {CMAKE_SOURCE_DIR}
+    COMMENT "Running Cucumber BDD tests with multiple output formats"
+)
+
+# Custom target for continuous integration
+add_custom_target(cucumber_ci
+    COMMAND {CMAKE_BINARY_DIR}/cucumber_tests
+        --format=json:cucumber_results.json
+        --format=progress
+        --strict
+    DEPENDS cucumber_tests
+    WORKING_DIRECTORY {CMAKE_SOURCE_DIR}
+    COMMENT "Running Cucumber tests for CI/CD pipeline"
+)
