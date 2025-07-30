@@ -6,6 +6,7 @@
 #include <utility>
 #include "game/Game.h"
 #include "game/General.h"
+#include "game/Guard.h"
 
 class ChineseChessSteps : public ::testing::Test {
 protected:
@@ -45,6 +46,8 @@ protected:
             std::unique_ptr<Piece> piece;
             if (pieceType == "General") {
                 piece = std::make_unique<General>(color);
+            } else if (pieceType == "Guard") {
+                piece = std::make_unique<Guard>(color);
             }
             // Other pieces will be added as we implement them
             
@@ -69,6 +72,8 @@ protected:
                 std::unique_ptr<Piece> piece;
                 if (pieceType == "General") {
                     piece = std::make_unique<General>(color);
+                } else if (pieceType == "Guard") {
+                    piece = std::make_unique<Guard>(color);
                 }
                 // Other pieces will be added as we implement them
                 
@@ -123,4 +128,28 @@ TEST_F(ChineseChessSteps, GeneralsFaceEachOtherIllegal) {
     
     // Then the move is illegal
     EXPECT_FALSE(lastMoveResult.isLegal) << "Move should be illegal - Generals cannot face each other";
+}
+
+// Fourth scenario: Red moves the Guard diagonally in the palace (Legal)
+TEST_F(ChineseChessSteps, RedMovesGuardDiagonallyInPalaceLegal) {
+    // Given the board is empty except for a Red Guard at (1, 4)
+    givenBoardIsEmptyExceptFor("Red Guard at (1, 4)");
+    
+    // When Red moves the Guard from (1, 4) to (2, 5)
+    whenPlayerMovesFrom("(1, 4)", "(2, 5)");
+    
+    // Then the move is legal
+    EXPECT_TRUE(lastMoveResult.isLegal) << "Move should be legal";
+}
+
+// Fifth scenario: Red moves the Guard straight (Illegal)
+TEST_F(ChineseChessSteps, RedMovesGuardStraightIllegal) {
+    // Given the board is empty except for a Red Guard at (2, 5)
+    givenBoardIsEmptyExceptFor("Red Guard at (2, 5)");
+    
+    // When Red moves the Guard from (2, 5) to (2, 6)
+    whenPlayerMovesFrom("(2, 5)", "(2, 6)");
+    
+    // Then the move is illegal
+    EXPECT_FALSE(lastMoveResult.isLegal) << "Move should be illegal - Guard cannot move straight";
 }
